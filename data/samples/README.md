@@ -2,47 +2,82 @@
 
 This directory contains sample data files for testing the Tomra Food MLOPS Platform.
 
-## Sample Images
+## 📁 Sample Images (`images/` subdirectory)
 
-### Required Test Images
-- `apple_01.jpg` - Primary test image for upload workflows
-- `banana_01.jpg` - Secondary test image for batch uploads  
-- `orange_01.jpg` - Third test image for format validation
-
-### Image Requirements
-- **File Size**: < 1MB each for CI performance
-- **Formats**: JPEG, PNG, WebP supported
-- **Dimensions**: Minimum 224x224 pixels
-- **Content**: Food images for classification testing
-
-### Usage in Tests
-Tests will automatically skip if required images are missing, printing guidance on where to obtain them.
+### Adding Your Own Images
+Drop your own JPG or PNG files into `data/samples/images/` to test real image uploads:
 
 ```bash
-# Example test output when images are missing:
-⚠️  Test data missing: data/samples/images/apple_01.jpg
-   Please add sample food images to continue with upload tests.
-   Images should be < 1MB, JPEG/PNG format, food-related content.
-```
+# Example:
+cp your-food-image.jpg data/samples/images/
+cp your-photo.png data/samples/images/
 
-## Mock Data Files
-- `sample.pdf` - Used for testing unsupported file type validation
-- `huge_image.jpg` - Used for testing file size limit validation (if present)
-
-## Environment Setup
-For local testing, ensure test images are present:
-
-```bash
-# Check for required test images
+# Check what images you have
 ls -la data/samples/images/
-ls -la data/samples/
-
-# Images can be any food photos meeting size/format requirements
-# Tests are designed to work with any valid images matching the naming pattern
 ```
 
-## CI/CD Considerations
-- Images are not committed to repository (too large)
-- Tests gracefully skip upload scenarios when images are missing
-- CI uses mocked responses for blob verification instead of real uploads
-- Real Azure integration only runs in designated test environments
+### Supported Formats
+- **JPEG**: `.jpg` and `.jpeg` files
+- **PNG**: `.png` files  
+- **File Size**: < 10MB each (recommended < 1MB for CI performance)
+- **Dimensions**: Minimum 224x224 pixels recommended
+- **Content**: Food images work best for classification testing
+
+### Test Behavior
+- **If images exist**: Upload tests will automatically discover and use your images
+- **If empty**: Tests will skip upload functionality with clear guidance
+- **Multiple images**: Tests will use the first image found, or multiple for batch testing
+
+### Usage Examples
+
+```bash
+# Add sample images
+mkdir -p data/samples/images
+cp ~/Pictures/apple.jpg data/samples/images/
+cp ~/Downloads/food-photo.png data/samples/images/
+
+# Run headed tests to see your images being uploaded
+npm run test:headed tests/smoke/upload.smoke.test.mjs
+
+# Run comprehensive upload demos
+npm run test:demo:show
+```
+
+### Recommended Test Images
+For optimal testing experience, consider adding:
+- `apple.jpg` - Primary test image for single uploads
+- `orange.png` - Secondary image for batch upload testing  
+- `food-mix.jpg` - Additional image for variety testing
+
+## 🗂️ Mock Data Files
+- `sample.pdf` - Used for testing unsupported file type validation
+- `large-file.jpg` - Used for testing file size limit validation (if present)
+
+## 🔧 Environment Setup
+For local testing, ensure your test environment is ready:
+
+```bash
+# Check current test data
+ls -la data/samples/
+ls -la data/samples/images/
+
+# Add your own images
+cp /path/to/your/food-images/* data/samples/images/
+
+# Verify tests can find your images
+npm run test:smoke
+```
+
+## 🚀 CI/CD Considerations
+- **Images not committed**: Too large for repository, added to .gitignore
+- **Graceful fallback**: Tests skip upload scenarios when images missing
+- **Mock responses**: CI uses mocked blob verification instead of real uploads
+- **Real Azure integration**: Only runs in designated test environments with proper credentials
+
+## 📊 Test Integration
+The upload tests automatically:
+- Discover all images in `data/samples/images/`
+- Validate file formats and sizes
+- Display detailed upload progress and results
+- Generate blob storage URLs and metadata
+- Verify successful Azure integration (when configured)
