@@ -6,12 +6,16 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
-    "smoke": "playwright test -g @smoke",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:integration": "playwright test --grep @integration",  
+    "test:unit": "playwright test --grep @unit",
+    "test:headed": "playwright test --headed --project=chromium",
+    "test:ui": "playwright test --ui",
+    "serve:mock": "node scripts/serve-mock.mjs",
+    "demo:tomra": "node scripts/demo.mjs",
+    "demo:fast": "node scripts/demo-fast.mjs",
     "report": "playwright show-report",
-    "pw:install": "playwright install",
-    "test:debug": "playwright test --debug",
-    "test:headed": "playwright test --headed",
-    "test:ci": "playwright test --reporter=html"
+    "install:browsers": "playwright install"
   },
   "keywords": [
     "playwright",

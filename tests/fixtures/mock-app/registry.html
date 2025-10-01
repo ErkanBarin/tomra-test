@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Registry - Tomra Food MLOPS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .controls { display: flex; gap: 15px; margin: 20px 0; align-items: center; }
+        .controls input, .controls select, .controls button { padding: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f5f5f5; cursor: pointer; user-select: none; }
+        th:hover { background-color: #e5e5e5; }
+        .stage-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .stage-production { background: #4CAF50; color: white; }
+        .stage-staging { background: #FF9800; color: white; }
+        .stage-development { background: #2196F3; color: white; }
+        .promote-button { background: #4CAF50; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .promote-button:hover { background: #45a049; }
+        .model-row { transition: background-color 0.2s; }
+        .model-row:hover { background-color: #f9f9f9; }
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+        .loading { text-align: center; padding: 20px; }
+        .hidden { display: none; }
+        .model-count { margin: 10px 0; color: #666; }
+        .last-refresh { font-size: 0.9em; color: #666; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 data-testid="page-title">Model Registry</h1>
+        
+            <div class="controls">
+      <input type="text" id="search-input" data-testid="search-input" placeholder="Search models..." onkeyup="searchModels()" onchange="searchModels()">
+      <select id="filter-dropdown" data-testid="status-filter-dropdown" onchange="filterModels()">
+        <option value="All">All Status</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+        <option value="Deprecated">Deprecated</option>
+      </select>
+      <button id="refresh-button" data-testid="refresh-button">Refresh</button>
+    </div>
+        
+        <div data-testid="loading-indicator" class="loading" style="display: none;">Loading models...</div>
+        
+        <div data-testid="model-count" class="model-count">3 model(s) found</div>
+        
+    <table class="models-table" data-testid="models-table">
+      <thead>
+        <tr>
+          <th data-testid="name-column-header" class="sortable" onclick="sortTable('name')">Model Name ↕</th>
+          <th data-testid="version-column-header" class="sortable" onclick="sortTable('version')">Version ↕</th>
+          <th data-testid="status-column-header" class="sortable" onclick="sortTable('status')">Status ↕</th>
+          <th data-testid="created-column-header" class="sortable" onclick="sortTable('created')">Created ↕</th>
+          <th data-testid="f1_score-column-header" class="sortable" onclick="sortTable('f1_score')">F1 Score ↕</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="models-tbody">
+        <tr class="model-row" data-testid="model-row" data-name="food-classification" data-version="1" data-status="Active" data-created="2024-01-15" data-f1-score="0.95">
+          <td data-testid="model-name">food-classification</td>
+          <td data-testid="model-version">1</td>
+          <td data-testid="model-status">Active</td>
+          <td data-testid="model-created">2024-01-15</td>
+          <td data-testid="model-f1-score">0.95</td>
+          <td>
+            <button class="btn-promote" data-testid="promote-button" data-model="food-classification" data-version="1">
+              Promote to <span class="stage-badge staging" data-testid="stage-badge">Staging</span>
+            </button>
+          </td>
+        </tr>
+        <tr class="model-row" data-testid="model-row" data-name="food-classification-v1" data-version="2" data-status="Active" data-created="2024-01-20" data-f1-score="0.93">
+          <td data-testid="model-name">food-classification-v1</td>
+          <td data-testid="model-version">2</td>
+          <td data-testid="model-status">Active</td>
+          <td data-testid="model-created">2024-01-20</td>
+          <td data-testid="model-f1-score">0.93</td>
+          <td>
+            <button class="btn-promote" data-testid="promote-button" data-model="food-classification-v1" data-version="2">
+              Promote to <span class="stage-badge staging" data-testid="stage-badge">Staging</span>
+            </button>
+          </td>
+        </tr>
+        <tr class="model-row" data-testid="model-row" data-name="apple-classifier" data-version="3" data-status="Inactive" data-created="2024-01-05" data-f1-score="0.96">
+          <td data-testid="model-name">apple-classifier</td>
+          <td data-testid="model-version">3</td>
+          <td data-testid="model-status">Inactive</td>
+          <td data-testid="model-created">2024-01-05</td>
+          <td data-testid="model-f1-score">0.96</td>
+          <td>
+            <button class="btn-promote" data-testid="promote-button" data-model="apple-classifier" data-version="3">
+              Promote to <span class="stage-badge staging" data-testid="stage-badge">Staging</span>
+            </button>
+          </td>
+        </tr>
+        <tr class="model-row" data-testid="model-row" data-name="waste-classifier" data-version="4" data-status="Deprecated" data-created="2024-01-10" data-f1-score="0.92">
+          <td data-testid="model-name">waste-classifier</td>
+          <td data-testid="model-version">4</td>
+          <td data-testid="model-status">Deprecated</td>
+          <td data-testid="model-created">2024-01-10</td>
+          <td data-testid="model-f1-score">0.92</td>
+          <td>
+            <button class="btn-promote" data-testid="promote-button" data-model="waste-classifier" data-version="4">
+              Promote to <span class="stage-badge production" data-testid="stage-badge">Production</span>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div id="empty-state" data-testid="empty-state-message" class="empty-state" style="display: none;">
+      <h3>No models found matching your search criteria</h3>
+      <p>Try adjusting your search terms or clear the filters.</p>
+      <div data-testid="search-suggestions">
+        <h4>Search Suggestions</h4>
+        <ul>
+          <li>food-classification</li>
+          <li>apple-classifier</li>
+          <li>waste-classifier</li>
+        </ul>
+      </div>
+    </div>
+
+    <div data-testid="last-refresh-time" class="last-refresh">
+      Last refreshed: Never
+    </div>
+    </div>
+
+    <script>
+      let allModels = [];
+      let filteredModels = [];
+      let currentSort = { column: null, direction: 'asc' };
+
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        loadModels();
+        updateLastRefreshTime();
+        
+        // Add refresh button event listener
+        const refreshButton = document.getElementById('refresh-button');
+        if (refreshButton) {
+          refreshButton.addEventListener('click', function() {
+            console.log('Refresh button clicked');
+            refreshModels();
+          });
+        }
+      });
+
+      function loadModels() {
+        const tbody = document.getElementById('models-tbody');
+        const rows = tbody.querySelectorAll('.model-row');
+        allModels = Array.from(rows).map(row => ({
+          name: row.dataset.name,
+          version: row.dataset.version,
+          status: row.dataset.status,
+          created: row.dataset.created,
+          f1_score: parseFloat(row.dataset.f1Score),
+          element: row
+        }));
+        filteredModels = [...allModels];
+      }
+
+      function searchModels() {
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const filterValue = document.getElementById('filter-dropdown').value;
+        
+        filteredModels = allModels.filter(model => {
+          const matchesSearch = !searchTerm || model.name.toLowerCase().includes(searchTerm);
+          const matchesFilter = filterValue === 'All' || model.status === filterValue;
+          return matchesSearch && matchesFilter;
+        });
+        
+        renderModels();
+      }
+
+      function filterModels() {
+        searchModels(); // Reuse search logic
+      }
+
+      function renderModels() {
+        const tbody = document.getElementById('models-tbody');
+        const emptyState = document.getElementById('empty-state');
+        
+        // Hide all rows first
+        allModels.forEach(model => {
+          model.element.style.display = 'none';
+        });
+        
+        if (filteredModels.length === 0) {
+          emptyState.style.display = 'block';
+        } else {
+          emptyState.style.display = 'none';
+          filteredModels.forEach(model => {
+            model.element.style.display = '';
+          });
+        }
+      }
+
+      function sortTable(column) {
+        if (currentSort.column === column) {
+          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.column = column;
+          currentSort.direction = 'asc';
+        }
+
+        filteredModels.sort((a, b) => {
+          let aVal = a[column];
+          let bVal = b[column];
+          
+          if (column === 'created') {
+            aVal = new Date(aVal);
+            bVal = new Date(bVal);
+          } else if (column === 'f1_score') {
+            aVal = parseFloat(aVal);
+            bVal = parseFloat(bVal);
+          } else if (column === 'version') {
+            aVal = parseInt(aVal);
+            bVal = parseInt(bVal);
+          }
+
+          if (currentSort.direction === 'asc') {
+            return aVal > bVal ? 1 : -1;
+          } else {
+            return aVal < bVal ? 1 : -1;
+          }
+        });
+
+        // Reorder DOM elements
+        const tbody = document.getElementById('models-tbody');
+        filteredModels.forEach(model => {
+          tbody.appendChild(model.element);
+        });
+      }
+
+      function refreshModels() {
+        console.log('refreshModels called');
+        const loading = document.getElementById('loading-indicator');
+        console.log('loading element:', loading);
+        loading.style.display = 'block';
+        console.log('set loading to block');
+        
+        setTimeout(() => {
+          loading.style.display = 'none';
+          updateLastRefreshTime();
+          loadModels();
+          searchModels(); // Re-apply current filters
+        }, 1000);
+      }
+
+      function updateLastRefreshTime() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString();
+        document.querySelector('[data-testid="last-refresh-time"]').textContent = `Last refreshed: ${timeStr}`;
+      }
+
+      function promoteModel(modelName, version) {
+        const button = event.target.closest('button');
+        const stageBadge = button.querySelector('.stage-badge');
+        
+        if (stageBadge.classList.contains('staging')) {
+          stageBadge.classList.remove('staging');
+          stageBadge.classList.add('production');
+          stageBadge.textContent = 'Production';
+          button.innerHTML = button.innerHTML.replace('Promote to', 'Deployed to');
+        }
+        
+        console.log(`Promoted ${modelName} v${version} to production`);
+      }
+
+      // Add click handlers for promote buttons
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-promote')) {
+          const modelName = e.target.dataset.model;
+          const version = e.target.dataset.version;
+          promoteModel(modelName, version);
+        }
+      });
+    </script>
+</body>
+</html>

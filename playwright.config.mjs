@@ -8,6 +8,33 @@ import { defineConfig, devices } from '@playwright/test';
 // dotenv.config();
 
 /**
+ * Environment variable configuration
+ */
+const HEADLESS = false; // Force visible browser for demo
+const MOCK_APP = process.env.MOCK_APP === 'true'; // Default to false, unless explicitly true
+const TEST_ENV = process.env.TEST_ENV || 't1';
+
+/**
+ * Determine baseURL based on MOCK_APP setting
+ */
+function getBaseURL() {
+  if (MOCK_APP) {
+    // Use file:// URLs for mock app
+    return null; // Page objects will handle file:// navigation
+  }
+  
+  // Try to load environment config
+  try {
+    // For now, fallback to local mock server
+    // TODO: Implement proper env config loading when needed
+    return 'http://127.0.0.1:5173';
+  } catch {
+    // Fallback to local mock server if no env config
+    return 'http://127.0.0.1:5173';
+  }
+}
+
+/**
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
@@ -25,7 +52,10 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: getBaseURL(),
+
+    /* Force visible browser */
+    headless: false,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'retain-on-failure',
@@ -33,8 +63,8 @@ export default defineConfig({
     /* Capture screenshot on failure */
     screenshot: 'only-on-failure',
     
-    /* Record video on failure */
-    video: 'retain-on-failure',
+    /* Record video always to prove browser opened */
+    video: 'on',
     
     /* Global timeout for all tests */
     actionTimeout: 30000,
@@ -47,9 +77,18 @@ export default defineConfig({
       name: 'chromium',
       use: { 
         ...devices['Desktop Chrome'],
-        // Additional Chrome-specific settings
+        // Force visible browser with explicit settings
+        headless: false,
         launchOptions: {
-          args: ['--disable-web-security', '--disable-features=VizDisplayCompositor']
+          headless: false,
+          slowMo: 1000,
+          devtools: false,
+          args: [
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-web-security',
+            '--start-maximized'
+          ]
         }
       },
     },
@@ -95,9 +134,10 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://127.0.0.1:3000',
+  //   command: 'node scripts/serve-mock.mjs',
+  //   url: 'http://127.0.0.1:5173',
   //   reuseExistingServer: !process.env.CI,
+  //   timeout: 120 * 1000,
   // },
 
   /* Global timeout for entire test suite */
