@@ -1,234 +1,71 @@
-# TOMRA MLOps Test Automation Suite
+# TOMRA MLOps Demo
 
-A comprehensive Playwright test automation framework for TOMRA's MLOps pipeline, featuring complete End-to-End testing of upload workflows and Model Registry management with ML performance validation.
+What this repo is: a self-contained demo of core MLOps interactions for a food-classification pipeline. It shows how image uploads, model evaluation and a simple model registry can be tested end-to-end using Playwright and small mock pages.
 
-## 🎯 Features
+What it does (short):
+- Uploads sample images via a mock upload UI
+- Validates uploads and simulates blob verification
+- Lists models in a mock Model Registry and checks simple quality metrics
+- Runs end-to-end demo flows showing upload → training → registry
 
-- **Complete MLOps Testing**: Upload workflows + Model Registry management
-- **ML Quality Validation**: F1 score monitoring and performance thresholds
-- **Browser Automation**: Playwright-powered testing across multiple browsers
-- **Azure Integration**: Blob storage verification and ML job monitoring
-- **Real Image Processing**: Upload and validate JPG/PNG images
-- **Business Intelligence**: Model quality analytics and compliance features
-- **Demo-Friendly**: Sequential E2E demos perfect for stakeholder presentations
-- **CI/CD Ready**: Headless execution optimized for continuous integration
+How it works (high level):
+- Playwright tests drive the browser against either local mock HTML apps (fast demo) or real pages
+- Mock apps live in `tests/fixtures/mock-app/` and emulate server behavior
+- Utilities in `utils/` provide small helpers (timing, azure stubs)
 
-## 🚀 Quick Start
+Tools used:
+- Node.js (>=20) and Playwright for browser automation
+- Lightweight mock HTML pages instead of a backend server for deterministic demos
+
+How to run (dev/demo):
+1. Install dependencies
 
 ```bash
-# Install dependencies
 npm install
-
-# Run tests (headless mode)
-npm test
-
-# Run tests with browser UI for demos
-npm run test:headed
-
-# Run interactive test development
-npm run test:ui
 ```
 
-## 📁 Project Structure
-
-```
-├── .github/             # GitHub workflows and automation
-├── pages/               # Page Object Model classes
-│   ├── upload.page.mjs
-│   ├── training.page.mjs  
-│   └── model-registry.page.mjs
-├── tests/
-│   ├── smoke/           # Smoke tests including real image uploads
-│   ├── fixtures/        # Test fixtures and mock applications
-│   │   └── mock-app/    # Static HTML applications for testing
-│   └── integration/     # Integration test suites
-├── utils/
-│   ├── azure.mjs        # Azure utilities (Storage & ML)
-│   └── waitFor.mjs      # Async utilities and timeouts
-├── scripts/
-│   ├── serve-mock.mjs   # Static server for mock apps
-│   ├── demo.mjs         # Demo automation scripts
-│   └── demo-fast.mjs    # Fast demo version
-├── config/
-│   └── env.*.mjs        # Environment configurations
-└── data/
-    └── samples/
-        └── images/      # Real image samples for testing
-```
-
-## 🎬 Watch it Run
-
-For demonstrations and debugging, use the headed mode to see tests execute in real browsers:
+2. Serve mocks (optional, demo mode):
 
 ```bash
-# Watch tests run in browser windows
-npm run test:headed
-
-# Interactive test development with Playwright UI
-npm run test:ui
-
-# Serve mock applications locally
 npm run serve:mock
+# open http://127.0.0.1:5173/upload.html manually if you want
 ```
 
-### Environment Configuration
-
-Control test behavior with environment variables:
+3. Run the sequential E2E demo (visible browser):
 
 ```bash
-# Run with browser UI visible
-HEADLESS=false npm test
-
-# Use mock server instead of fixtures
-MOCK_APP=true npm test
-
-# Combine options for demos
-HEADLESS=false MOCK_APP=true npm run test:headed
+npm run test:demo:show
 ```
 
-## 📸 Use Your Own Images
-
-Test with real images by placing JPG or PNG files in `data/samples/images/`:
+Quick commands:
 
 ```bash
-# Add your images
-mkdir -p data/samples/images
-cp /path/to/your/image.jpg data/samples/images/
-cp /path/to/your/image.png data/samples/images/
-
-# Run upload tests with real images
-npm run test:headed tests/smoke/upload.smoke.test.mjs
+npm test                 # run all tests (headless)
+npm run test:demo        # run demo-tagged tests (headless)
+npm run test:demo:headed # run demo-tagged tests (visible, parallel)
 ```
 
-### Supported Image Formats
+What is intentionally missing (this is a demo):
+- No real backend or persistent storage (mocked blob verification)
+- No CI secrets for Azure — CI should use secure credentials and real Azure integration when needed
+- Limited dataset and metrics (intended to demonstrate flows, not production quality)
 
-- **JPG/JPEG**: Standard photo format
-- **PNG**: Lossless compression format
-- **Size Limit**: 10MB maximum per image
-- **Validation**: Automatic content-type detection
+If you want this to be production-ready, you'd add:
+- Real backend endpoints and authentication
+- Secure storage of credentials and pipelines for model training
+- Expanded datasets, monitoring, and model promotion workflows
 
-The smoke tests will automatically discover and test all images in the samples directory, providing detailed validation results for each file.
+Project layout (short):
 
-## 🧪 Test Execution
-
-### Test Suite Categories
-
-```bash
-# Run all tests by category
-npm run test:smoke        # Quick functionality validation
-npm run test:integration  # Full workflow testing
-npm run test:e2e         # End-to-end user journeys
-npm run test:all         # Complete test suite
-
-# Demo commands for presentations
-npm run test:demo        # All demo tests (headless)
-npm run test:demo:headed # All demo tests (visible browser)
-npm run test:demo:show   # E2E demos only (sequential, perfect for live demos)
+```
+pages/               # Page objects
+tests/               # smoke, integration, e2e, fixtures
+utils/               # helpers (azure stubs, wait helpers)
+data/samples/images/ # optional test images
+scripts/             # serve-mock, demo runners
 ```
 
-### Standard Test Modes
-
-```bash
-# Run all tests (CI mode)
-npm test
-
-# Run specific test file
-npm test tests/smoke/upload.smoke.test.mjs
-
-# Run tests with pattern matching
-npm test -- --grep "upload"
-```
-
-### Demo and Development Modes
-
-```bash
-# Interactive browser testing
-npm run test:headed
-
-# Playwright test UI for development
-npm run test:ui
-
-# Start mock server for manual testing
-npm run serve:mock
-# Then visit http://127.0.0.1:5173/upload.html
-```
-
-## 🎯 E2E Test Coverage
-
-Our comprehensive End-to-End test suite demonstrates complete MLOps workflows:
-
-### 📤 **Upload Workflow Tests**
-- **Complete Upload Journey**: Single image upload with validation
-- **Batch Upload Processing**: Multiple images with progress tracking
-- **Error Handling**: Invalid file type validation and user feedback
-- **Azure Integration**: Blob storage verification and metadata validation
-
-### 🤖 **Model Registry Tests**
-- **Model Browsing**: View all registered ML models with metadata
-- **Advanced Search**: Find models by name, version, or criteria
-- **Status Filtering**: Filter Active/Deprecated models for deployment control
-- **Performance Sorting**: Sort by F1 score and quality metrics
-- **Real-time Refresh**: Live data updates and timestamp validation
-- **Business Intelligence**: Quality ratio analysis and compliance features
-
-### 🧭 **Navigation & Platform Tests**
-- **Cross-Platform Navigation**: Upload → Training → Registry workflows
-- **UI Component Validation**: Interactive elements and responsive design
-- **Feature Discovery**: Button interactions and form validations
-
-## 📊 ML Model Quality Validation
-
-### F1 Score Monitoring
-The Model Registry E2E tests validate **F1 Score** performance metrics:
-
-**What is F1 Score?**
-- **F1 = 2 × (Precision × Recall) / (Precision + Recall)**
-- **Precision**: Of all items classified as "apple", how many are actually apples?
-- **Recall**: Of all actual apples, how many did we correctly identify?
-- **Balanced Measure**: Combines both precision and recall for overall model quality
-
-**Quality Thresholds in Tests:**
-```javascript
-// Automated F1 score validation
-✅ F1 Score ≥ 0.92 = High Quality Model (production ready)
-⚠️  F1 Score < 0.92 = Needs improvement
-📊 Quality Ratio: % of models meeting threshold
-```
-
-**Business Value Demonstration:**
-- **Food Safety**: High precision prevents contaminated items from passing
-- **Efficiency**: High recall ensures good food isn't wasted  
-- **Compliance**: Audit trails for model performance and deployment decisions
-- **Quality Assurance**: Automated validation of 50%+ high-performance models
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `HEADLESS` | Run browsers in headless mode | `true` |
-| `MOCK_APP` | Use local mock server | `false` |
-| `TEST_ENV` | Test environment identifier | `ci` |
-| `AZURE_STORAGE_*` | Azure Storage configuration | (optional) |
-
-### Playwright Configuration
-
-The `playwright.config.mjs` automatically adapts based on environment:
-
-- **CI Mode**: Headless, fast execution, minimal output
-- **Demo Mode**: Headed browsers, slower execution, detailed logging
-- **Development**: UI mode with interactive debugging
-
-## 🏗️ Azure Integration
-
-### Blob Storage Verification
-
-```javascript
-import { BlobVerificationUtils } from './utils/azure.mjs';
-
-const blobUtils = new BlobVerificationUtils();
-const result = await blobUtils.verifyBlobExists(sasUrl);
+License and authorship: internal TOMRA demo project.
 ```
 
 ### ML Job Monitoring
