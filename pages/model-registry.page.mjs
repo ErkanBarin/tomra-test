@@ -37,13 +37,33 @@ export class ModelRegistryPage {
    */
   async navigate() {
     try {
-      await this.page.goto('/registry');
+      const response = await this.page.goto('/registry');
       await this.page.waitForLoadState('networkidle');
+      
+      // Check if we got a 404 or other error response
+      if (response && (response.status() === 404 || response.status() >= 500)) {
+        throw new Error(`Server returned ${response.status()}`);
+      }
     } catch (error) {
-      // If no server is available, use local mock HTML file
-      const mockFilePath = `file://${process.cwd()}/tests/fixtures/mock-app/registry.html`;
-      await this.page.goto(mockFilePath);
-      await this.page.waitForLoadState('domcontentloaded');
+      // Log the original navigation error for debugging
+      console.error(
+        `Registry page navigation failed, falling back to mock file. Error: ${error.message}`,
+        error.stack
+      );
+      
+      // Try mock server first, then local file
+      try {
+        const mockResponse = await this.page.goto('http://127.0.0.1:5173/registry.html');
+        await this.page.waitForLoadState('networkidle');
+        if (mockResponse && mockResponse.status() >= 400) {
+          throw new Error(`Mock server returned ${mockResponse.status()}`);
+        }
+      } catch (serverError) {
+        // If no server is available, use local mock HTML file
+        const mockFilePath = `file://${process.cwd()}/tests/fixtures/mock-app/registry.html`;
+        await this.page.goto(mockFilePath);
+        await this.page.waitForLoadState('domcontentloaded');
+      }
     }
   }
 

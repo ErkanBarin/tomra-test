@@ -41,7 +41,14 @@
             <div id="images-container"></div>
         </div>
         
-        <img data-testid="uploaded-image-preview" class="image-preview hidden" />
+        <div id="image-previews-container" class="hidden">
+            <h3>Image Previews</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <img data-testid="uploaded-image-preview" class="image-preview hidden" />
+                <img data-testid="uploaded-image-preview-2" class="image-preview hidden" />
+                <img data-testid="uploaded-image-preview-3" class="image-preview hidden" />
+            </div>
+        </div>
         
         <div data-testid="image-metadata" class="hidden">
             <h4>Image Metadata</h4>
@@ -61,62 +68,237 @@
     </div>
 
     <script>
-        // Mock upload functionality
+        // Mock upload functionality with enhanced features
         const fileInput = document.querySelector('[data-testid="upload-file-input"]');
         const uploadButton = document.querySelector('[data-testid="upload-submit-button"]');
         const progressBar = document.querySelector('[data-testid="upload-progress-bar"]');
         const progressFill = document.getElementById('progress-fill');
         const progressPercent = document.querySelector('[data-testid="upload-progress-percentage"]');
         const successMessage = document.querySelector('[data-testid="upload-success-message"]');
+        const errorMessage = document.querySelector('[data-testid="upload-error-message"]');
+        const batchSuccessMessage = document.querySelector('[data-testid="batch-upload-success-message"]');
         const imagePreview = document.querySelector('[data-testid="uploaded-image-preview"]');
         const imageMetadata = document.querySelector('[data-testid="image-metadata"]');
         const sasUrl = document.querySelector('[data-testid="sas-url"]');
         const uploadedImagesList = document.querySelector('[data-testid="uploaded-images-list"]');
+        const imagesContainer = document.getElementById('images-container');
         const clearButton = document.querySelector('[data-testid="clear-all-images-button"]');
+        const clearSuccessMessage = document.querySelector('[data-testid="clear-success-message"]');
+        
+        // Track uploaded images
+        let uploadedImages = [];
+        
+        // File type validation
+        function isValidImageFile(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            return validTypes.includes(file.type);
+        }
+        
+        // Update metadata display with actual file info
+        function updateMetadata(file) {
+            const filename = file.name;
+            const size = file.size;
+            const type = file.type;
+            
+            document.getElementById('filename').textContent = filename;
+            document.getElementById('filesize').textContent = size;
+            document.getElementById('filetype').textContent = type;
+            
+            // Update metadata JSON for page object access
+            const metadataJson = {
+                filename: filename,
+                size: size,
+                type: type,
+                blob_url: `https://tomrafoodstorage.blob.core.windows.net/images/${filename}`,
+                preview_url: `/previews/${filename}`
+            };
+            
+            // Store in hidden element for page object access
+            let jsonElement = document.getElementById('metadata-json');
+            if (!jsonElement) {
+                jsonElement = document.createElement('div');
+                jsonElement.id = 'metadata-json';
+                jsonElement.style.display = 'none';
+                document.body.appendChild(jsonElement);
+            }
+            jsonElement.textContent = JSON.stringify(metadataJson);
+            
+            return metadataJson;
+        }
+        
+        // Add image to uploaded list
+        function addToUploadedList(file, metadata) {
+            const imageItem = {
+                filename: file.name,
+                size: file.size,
+                type: file.type,
+                status: 'uploaded',
+                preview_url: metadata.preview_url,
+                blob_url: metadata.blob_url,
+                timestamp: new Date().toISOString()
+            };
+            
+            uploadedImages.push(imageItem);
+            
+            // Create visual item in the list
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'uploaded-image-item';
+            itemDiv.innerHTML = `
+                <p><strong>${file.name}</strong> (${file.size} bytes)</p>
+                <p>Status: ${imageItem.status}</p>
+                <p>Type: ${file.type}</p>
+            `;
+            imagesContainer.appendChild(itemDiv);
+            
+            // Store JSON list for page object access
+            let listElement = document.getElementById('uploaded-images-json');
+            if (!listElement) {
+                listElement = document.createElement('div');
+                listElement.id = 'uploaded-images-json';
+                listElement.style.display = 'none';
+                document.body.appendChild(listElement);
+            }
+            listElement.textContent = JSON.stringify(uploadedImages);
+        }
         
         uploadButton.addEventListener('click', function() {
-            if (fileInput.files.length > 0) {
-                // Show progress
-                progressBar.classList.remove('hidden');
-                progressPercent.classList.remove('hidden');
-                
-                // Simulate upload progress
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += 10;
-                    progressFill.style.width = progress + '%';
-                    progressPercent.textContent = progress + '%';
-                    
-                    if (progress >= 100) {
-                        clearInterval(interval);
-                        
-                        // Show success
-                        setTimeout(() => {
-                            successMessage.classList.remove('hidden');
-                            imagePreview.classList.remove('hidden');
-                            imageMetadata.classList.remove('hidden');
-                            sasUrl.classList.remove('hidden');
-                            uploadedImagesList.classList.remove('hidden');
-                            clearButton.classList.remove('hidden');
-                            
-                            // Set preview image
-                            const file = fileInput.files[0];
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                imagePreview.src = e.target.result;
-                            };
-                            reader.readAsDataURL(file);
-                        }, 500);
-                    }
-                }, 100);
+            const files = Array.from(fileInput.files);
+            
+            if (files.length === 0) {
+                errorMessage.textContent = 'Please select at least one file.';
+                errorMessage.classList.remove('hidden');
+                return;
             }
+            
+            // Validate all files first
+            const invalidFiles = files.filter(file => !isValidImageFile(file));
+            if (invalidFiles.length > 0) {
+                errorMessage.textContent = 'Only image files are supported. Invalid files: ' + invalidFiles.map(f => f.name).join(', ');
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            
+            // Hide previous messages
+            errorMessage.classList.add('hidden');
+            successMessage.classList.add('hidden');
+            batchSuccessMessage.classList.add('hidden');
+            
+            // Show progress
+            progressBar.classList.remove('hidden');
+            progressPercent.classList.remove('hidden');
+            
+            // Simulate upload progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 20;
+                progressFill.style.width = progress + '%';
+                progressPercent.textContent = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    
+                    // Hide progress bar after completion
+                    setTimeout(() => {
+                        progressBar.classList.add('hidden');
+                        progressPercent.classList.add('hidden');
+                        
+                        // Process each file and show previews
+                        const imagePreviewElements = [
+                            document.querySelector('[data-testid="uploaded-image-preview"]'),
+                            document.querySelector('[data-testid="uploaded-image-preview-2"]'),
+                            document.querySelector('[data-testid="uploaded-image-preview-3"]')
+                        ];
+                        
+                        files.forEach((file, index) => {
+                            const metadata = updateMetadata(file);
+                            addToUploadedList(file, metadata);
+                            
+                            // Show preview for each image (up to 3)
+                            if (index < imagePreviewElements.length && imagePreviewElements[index]) {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    imagePreviewElements[index].src = e.target.result;
+                                    imagePreviewElements[index].classList.remove('hidden');
+                                    
+                                    // Add filename label
+                                    const label = document.createElement('p');
+                                    label.textContent = file.name;
+                                    label.style.textAlign = 'center';
+                                    label.style.margin = '5px 0';
+                                    label.style.fontSize = '12px';
+                                    label.style.fontWeight = 'bold';
+                                    
+                                    // Insert label after the image
+                                    if (!imagePreviewElements[index].nextElementSibling || 
+                                        !imagePreviewElements[index].nextElementSibling.textContent.includes('.png')) {
+                                        imagePreviewElements[index].parentNode.insertBefore(label, imagePreviewElements[index].nextSibling);
+                                    }
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        });
+                        
+                        // Show image previews container if multiple files
+                        const previewsContainer = document.getElementById('image-previews-container');
+                        if (files.length > 0) {
+                            previewsContainer.classList.remove('hidden');
+                        }
+                        
+                        // Show appropriate success message
+                        if (files.length === 1) {
+                            successMessage.classList.remove('hidden');
+                        } else {
+                            batchSuccessMessage.classList.remove('hidden');
+                        }
+                        
+                        // Show other elements
+                        imageMetadata.classList.remove('hidden');
+                        sasUrl.classList.remove('hidden');
+                        uploadedImagesList.classList.remove('hidden');
+                        clearButton.classList.remove('hidden');
+                        
+                    }, 500);
+                }
+            }, 100);
         });
         
         clearButton.addEventListener('click', function() {
-            document.querySelector('[data-testid="clear-success-message"]').classList.remove('hidden');
+            // Clear uploaded images array
+            uploadedImages = [];
+            
+            // Clear visual list
+            imagesContainer.innerHTML = '';
+            
+            // Clear JSON storage
+            const listElement = document.getElementById('uploaded-images-json');
+            if (listElement) {
+                listElement.textContent = JSON.stringify([]);
+            }
+            
+            // Hide elements and show clear message
             uploadedImagesList.classList.add('hidden');
             imagePreview.classList.add('hidden');
+            
+            // Hide all image previews
+            const allPreviews = document.querySelectorAll('[data-testid^="uploaded-image-preview"]');
+            allPreviews.forEach(preview => preview.classList.add('hidden'));
+            
+            // Hide preview container
+            const previewsContainer = document.getElementById('image-previews-container');
+            previewsContainer.classList.add('hidden');
+            
             successMessage.classList.add('hidden');
+            batchSuccessMessage.classList.add('hidden');
+            imageMetadata.classList.add('hidden');
+            sasUrl.classList.add('hidden');
+            clearButton.classList.add('hidden');
+            
+            clearSuccessMessage.classList.remove('hidden');
+            
+            // Hide clear message after 2 seconds
+            setTimeout(() => {
+                clearSuccessMessage.classList.add('hidden');
+            }, 2000);
         });
     </script>
 </body>

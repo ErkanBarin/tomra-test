@@ -1,13 +1,16 @@
-# TOMRA Playwright ESM Test Automation
+# TOMRA MLOps Test Automation Suite
 
-A comprehensive Playwright test automation framework for TOMRA's MLOps pipeline, built with ES Modules and Node.js 20.x.
+A comprehensive Playwright test automation framework for TOMRA's MLOps pipeline, featuring complete End-to-End testing of upload workflows and Model Registry management with ML performance validation.
 
 ## 🎯 Features
 
+- **Complete MLOps Testing**: Upload workflows + Model Registry management
+- **ML Quality Validation**: F1 score monitoring and performance thresholds
 - **Browser Automation**: Playwright-powered testing across multiple browsers
 - **Azure Integration**: Blob storage verification and ML job monitoring
 - **Real Image Processing**: Upload and validate JPG/PNG images
-- **Demo-Friendly**: Headed mode and UI testing for demonstrations
+- **Business Intelligence**: Model quality analytics and compliance features
+- **Demo-Friendly**: Sequential E2E demos perfect for stakeholder presentations
 - **CI/CD Ready**: Headless execution optimized for continuous integration
 
 ## 🚀 Quick Start
@@ -29,20 +32,28 @@ npm run test:ui
 ## 📁 Project Structure
 
 ```
-src/
+├── .github/             # GitHub workflows and automation
+├── pages/               # Page Object Model classes
+│   ├── upload.page.mjs
+│   ├── training.page.mjs  
+│   └── model-registry.page.mjs
 ├── tests/
 │   ├── smoke/           # Smoke tests including real image uploads
 │   ├── fixtures/        # Test fixtures and mock applications
-│   └── *.test.mjs      # Core test suites
+│   │   └── mock-app/    # Static HTML applications for testing
+│   └── integration/     # Integration test suites
 ├── utils/
-│   └── azure.mjs       # Azure utilities (Storage & ML)
-├── config/
-│   └── env.mjs         # Environment configuration
+│   ├── azure.mjs        # Azure utilities (Storage & ML)
+│   └── waitFor.mjs      # Async utilities and timeouts
 ├── scripts/
-│   └── serve-mock.mjs  # Static server for mock apps
+│   ├── serve-mock.mjs   # Static server for mock apps
+│   ├── demo.mjs         # Demo automation scripts
+│   └── demo-fast.mjs    # Fast demo version
+├── config/
+│   └── env.*.mjs        # Environment configurations
 └── data/
     └── samples/
-        └── images/     # Real image samples for testing
+        └── images/      # Real image samples for testing
 ```
 
 ## 🎬 Watch it Run
@@ -100,6 +111,21 @@ The smoke tests will automatically discover and test all images in the samples d
 
 ## 🧪 Test Execution
 
+### Test Suite Categories
+
+```bash
+# Run all tests by category
+npm run test:smoke        # Quick functionality validation
+npm run test:integration  # Full workflow testing
+npm run test:e2e         # End-to-end user journeys
+npm run test:all         # Complete test suite
+
+# Demo commands for presentations
+npm run test:demo        # All demo tests (headless)
+npm run test:demo:headed # All demo tests (visible browser)
+npm run test:demo:show   # E2E demos only (sequential, perfect for live demos)
+```
+
 ### Standard Test Modes
 
 ```bash
@@ -126,6 +152,54 @@ npm run test:ui
 npm run serve:mock
 # Then visit http://127.0.0.1:5173/upload.html
 ```
+
+## 🎯 E2E Test Coverage
+
+Our comprehensive End-to-End test suite demonstrates complete MLOps workflows:
+
+### 📤 **Upload Workflow Tests**
+- **Complete Upload Journey**: Single image upload with validation
+- **Batch Upload Processing**: Multiple images with progress tracking
+- **Error Handling**: Invalid file type validation and user feedback
+- **Azure Integration**: Blob storage verification and metadata validation
+
+### 🤖 **Model Registry Tests**
+- **Model Browsing**: View all registered ML models with metadata
+- **Advanced Search**: Find models by name, version, or criteria
+- **Status Filtering**: Filter Active/Deprecated models for deployment control
+- **Performance Sorting**: Sort by F1 score and quality metrics
+- **Real-time Refresh**: Live data updates and timestamp validation
+- **Business Intelligence**: Quality ratio analysis and compliance features
+
+### 🧭 **Navigation & Platform Tests**
+- **Cross-Platform Navigation**: Upload → Training → Registry workflows
+- **UI Component Validation**: Interactive elements and responsive design
+- **Feature Discovery**: Button interactions and form validations
+
+## 📊 ML Model Quality Validation
+
+### F1 Score Monitoring
+The Model Registry E2E tests validate **F1 Score** performance metrics:
+
+**What is F1 Score?**
+- **F1 = 2 × (Precision × Recall) / (Precision + Recall)**
+- **Precision**: Of all items classified as "apple", how many are actually apples?
+- **Recall**: Of all actual apples, how many did we correctly identify?
+- **Balanced Measure**: Combines both precision and recall for overall model quality
+
+**Quality Thresholds in Tests:**
+```javascript
+// Automated F1 score validation
+✅ F1 Score ≥ 0.92 = High Quality Model (production ready)
+⚠️  F1 Score < 0.92 = Needs improvement
+📊 Quality Ratio: % of models meeting threshold
+```
+
+**Business Value Demonstration:**
+- **Food Safety**: High precision prevents contaminated items from passing
+- **Efficiency**: High recall ensures good food isn't wasted  
+- **Compliance**: Audit trails for model performance and deployment decisions
+- **Quality Assurance**: Automated validation of 50%+ high-performance models
 
 ## 🔧 Configuration
 
@@ -198,6 +272,29 @@ The framework is optimized for continuous integration:
     HEADLESS: true
     TEST_ENV: ci
 ```
+
+### 📦 CI Artifacts
+
+When tests fail in Pull Requests, debugging artifacts are automatically uploaded:
+
+1. **HTML Reports**: 
+   - Go to the failed GitHub Actions run
+   - Scroll down to "Artifacts" section
+   - Download `playwright-report-chromium` or `playwright-report-firefox`
+   - Extract and open `index.html` in your browser
+
+2. **Test Traces**: 
+   - Download `playwright-traces-chromium` or `playwright-traces-firefox` from failed runs
+   - Extract the `.zip` files containing `trace.zip` files
+   - Open traces with: `npx playwright show-trace path/to/trace.zip`
+   - Or drag & drop trace files into [trace.playwright.dev](https://trace.playwright.dev)
+
+3. **Screenshots & Videos**:
+   - Available in the HTML report under each failed test
+   - Show exact failure points and browser state
+   - Videos prove browser interactions occurred correctly
+
+The artifacts are retained for 30 days and help diagnose CI-specific failures that don't reproduce locally.
 
 ## 📊 Monitoring and Metrics
 

@@ -6,14 +6,31 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
+    "test:all": "npm run test:smoke && npm run test:integration && npm run test:e2e",
+    
     "test:smoke": "playwright test --grep @smoke",
-    "test:integration": "playwright test --grep @integration",  
+    "test:integration": "playwright test --grep @integration",
+    "test:e2e": "playwright test --grep @e2e",
     "test:unit": "playwright test --grep @unit",
+    
+    "test:demo": "playwright test --grep @demo",
+    "test:demo:headed": "playwright test --grep @demo --headed --project=chromium",
+    "test:demo:show": "playwright test tests/e2e/demo.e2e.test.mjs --headed --project=chromium --workers=1",
+    
+    "test:upload": "playwright test tests/integration/image-upload.integration.test.mjs --project=chromium",
+    "test:upload:smoke": "playwright test tests/smoke/upload.smoke.test.mjs --project=chromium",
+    
     "test:headed": "playwright test --headed --project=chromium",
+    "test:headed:integration": "playwright test --grep @integration --headed --project=chromium",
+    "test:headed:e2e": "playwright test --grep @e2e --headed --project=chromium",
+    
     "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    
     "serve:mock": "node scripts/serve-mock.mjs",
     "demo:tomra": "node scripts/demo.mjs",
     "demo:fast": "node scripts/demo-fast.mjs",
+    
     "report": "playwright show-report",
     "install:browsers": "playwright install"
   },

@@ -15,7 +15,10 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Environment variable configuration
  */
-const HEADLESS = process.env.HEADLESS === 'true' || process.env.HEADLESS === '1'; // Default to false, true if explicitly 'true' or '1'
+const isCI = !!process.env.CI;
+const HEADLESS = process.env.HEADLESS !== undefined 
+  ? (process.env.HEADLESS === 'true' || process.env.HEADLESS === '1')
+  : isCI; // Default to true on CI, false locally
 const PLAYWRIGHT_DEBUG = process.env.PLAYWRIGHT_DEBUG === 'true'; // Debug/demo mode
 const MOCK_APP = process.env.MOCK_APP === 'true'; // Default to false, unless explicitly true
 
@@ -98,6 +101,7 @@ export default defineConfig({
       name: 'firefox',
       use: { 
         ...devices['Desktop Firefox'],
+        headless: HEADLESS,
         // Firefox-specific settings for file uploads
         launchOptions: {
           firefoxUserPrefs: {
@@ -109,7 +113,10 @@ export default defineConfig({
 
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { 
+        ...devices['Desktop Safari'],
+        headless: HEADLESS,
+      },
     },
 
     /* Test against mobile viewports. */
@@ -134,12 +141,12 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'node scripts/serve-mock.mjs',
-  //   url: 'http://127.0.0.1:5173',
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120 * 1000,
-  // },
+  webServer: MOCK_APP ? {
+    command: 'node scripts/serve-mock.mjs',
+    url: 'http://127.0.0.1:5173',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  } : undefined,
 
   /* Global timeout for entire test suite */
   globalTimeout: process.env.CI ? 10 * 60 * 1000 : undefined, // 10 minutes on CI

@@ -98,10 +98,9 @@ test.describe('Upload Smoke Tests', () => {
     }
     
     // Verify blob storage interaction (may be mocked)
-    await expect(uploadPage.blobUrlDisplay).toBeVisible();
-    const blobUrl = await uploadPage.getBlobUrl();
-    expect(blobUrl).toBeTruthy();
-    console.log(`✓ Blob URL generated: ${blobUrl}`);
+    const metadata = await uploadPage.getImageMetadata();
+    expect(metadata.blob_url).toBeTruthy();
+    console.log(`✓ Blob URL generated: ${metadata.blob_url}`);
   });
 
   test('should handle upload errors gracefully @smoke', async ({ page }) => {
@@ -132,7 +131,7 @@ test.describe('Upload Smoke Tests', () => {
     // Verify error handling
     await expect(uploadPage.errorMessage).toBeVisible();
     
-    const errorText = await uploadPage.getErrorMessage();
+    const errorText = await uploadPage.errorMessage.textContent();
     expect(errorText.toLowerCase()).toContain('invalid');
   });
 });

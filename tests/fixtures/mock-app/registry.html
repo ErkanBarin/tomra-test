@@ -43,7 +43,7 @@
       <button id="refresh-button" data-testid="refresh-button">Refresh</button>
     </div>
         
-        <div data-testid="loading-indicator" class="loading" style="display: none;">Loading models...</div>
+        <div id="loading-indicator" data-testid="loading-indicator" class="loading" style="display: none;">Loading models...</div>
         
         <div data-testid="model-count" class="model-count">4 model(s) found</div>
         
@@ -243,16 +243,22 @@
       function refreshModels() {
         console.log('refreshModels called');
         const loading = document.getElementById('loading-indicator');
-        console.log('loading element:', loading);
-        loading.style.display = 'block';
-        console.log('set loading to block');
+        const modelsTable = document.querySelector('[data-testid="models-table"]');
         
+        // Show loading indicator and hide table
+        loading.style.display = 'block';
+        modelsTable.style.display = 'none';
+        console.log('Showing loading indicator');
+        
+        // Simulate refresh with longer delay for tests to catch
         setTimeout(() => {
           loading.style.display = 'none';
+          modelsTable.style.display = 'table';
           updateLastRefreshTime();
           loadModels();
           searchModels(); // Re-apply current filters
-        }, 1000);
+          console.log('Refresh completed');
+        }, 1500); // Increased from 1000ms to 1500ms
       }
 
       function updateLastRefreshTime() {
