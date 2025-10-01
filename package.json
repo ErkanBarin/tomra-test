@@ -1,0 +1,37 @@
+{
+  "name": "tomra-mlops-automation",
+  "version": "1.0.0",
+  "description": "Test automation infrastructure for Tomra Food MLOPS Platform with truth pairing validation",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "smoke": "playwright test -g @smoke",
+    "report": "playwright show-report",
+    "pw:install": "playwright install",
+    "test:debug": "playwright test --debug",
+    "test:headed": "playwright test --headed",
+    "test:ci": "playwright test --reporter=html"
+  },
+  "keywords": [
+    "playwright",
+    "automation",
+    "azure",
+    "mlops",
+    "testing",
+    "truth-pairing"
+  ],
+  "author": "Tomra Food Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "playwright": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErkanBarin/tomra-test.git"
+  }
+}
