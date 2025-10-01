@@ -101,7 +101,14 @@ export class ModelRegistryPage {
   async searchModels(searchTerm) {
     await this.searchInput.fill(searchTerm);
     await this.page.keyboard.press('Enter');
-    await this.page.waitForTimeout(500);
+    
+    // Wait for search to complete by waiting for loading to finish
+    try {
+      await this.loadingIndicator.waitFor({ state: 'hidden', timeout: 5000 });
+    } catch {
+      // If no loading indicator, wait for table to be stable
+      await this.modelsTable.waitFor({ state: 'visible', timeout: 3000 });
+    }
   }
 
   /**
@@ -110,7 +117,14 @@ export class ModelRegistryPage {
   async clearSearch() {
     await this.searchInput.clear();
     await this.page.keyboard.press('Enter');
-    await this.page.waitForTimeout(500);
+    
+    // Wait for search clear to complete by waiting for loading to finish
+    try {
+      await this.loadingIndicator.waitFor({ state: 'hidden', timeout: 5000 });
+    } catch {
+      // If no loading indicator, wait for table to be stable
+      await this.modelsTable.waitFor({ state: 'visible', timeout: 3000 });
+    }
   }
 
   /**
@@ -119,7 +133,14 @@ export class ModelRegistryPage {
    */
   async filterByStatus(status) {
     await this.filterDropdown.selectOption(status);
-    await this.page.waitForTimeout(500);
+    
+    // Wait for filter to complete by waiting for loading to finish
+    try {
+      await this.loadingIndicator.waitFor({ state: 'hidden', timeout: 5000 });
+    } catch {
+      // If no loading indicator, wait for table to be stable
+      await this.modelsTable.waitFor({ state: 'visible', timeout: 3000 });
+    }
   }
 
   /**
@@ -137,38 +158,46 @@ export class ModelRegistryPage {
    * Refresh the models list
    */
   async refreshModels() {
-    // Store original timestamp
+    // Store original timestamp for comparison
     const originalTime = await this.getLastRefreshTime().catch(() => '');
     
+    // Click the refresh button to trigger user flow
     await this.refreshButton.click();
     
-    // Manually trigger the loading indicator for the test
-    await this.page.evaluate(() => {
-      const loading = document.querySelector('[data-testid="loading-indicator"]');
-      if (loading) {
-        loading.style.display = 'block';
-      }
-    });
-    
-    // Small delay to ensure loading indicator is visible
-    await this.page.waitForTimeout(100);
-    
-    // Hide the loading indicator after a moment
-    await this.page.evaluate(() => {
-      const loading = document.querySelector('[data-testid="loading-indicator"]');
-      if (loading) {
-        setTimeout(() => {
-          loading.style.display = 'none';
-          // Update refresh time
-          const refreshElement = document.querySelector('[data-testid="last-refresh-time"]');
-          if (refreshElement) {
-            refreshElement.textContent = `Last refreshed: ${new Date().toLocaleTimeString()}`;
-          }
-        }, 500);
-      }
-    });
-    
-    // Don't wait for loading to complete - let the test handle that
+    try {
+      // Wait for loading indicator to appear (app should show this)
+      await this.loadingIndicator.waitFor({ 
+        state: 'visible', 
+        timeout: 3000 
+      });
+      
+      // Wait for loading indicator to be hidden (refresh complete)
+      await this.loadingIndicator.waitFor({ 
+        state: 'hidden', 
+        timeout: 10000 
+      });
+      
+      // Wait for the last refresh time to actually change
+      await this.page.waitForFunction(
+        ({ originalTime, testId }) => {
+          const element = document.querySelector(`[data-testid="${testId}"]`);
+          return element && element.textContent !== originalTime;
+        },
+        { originalTime, testId: 'last-refresh-time' },
+        { timeout: 5000 }
+      );
+      
+    } catch (error) {
+      // Provide clear error context for debugging
+      const currentTime = await this.getLastRefreshTime().catch(() => 'N/A');
+      const loadingVisible = await this.loadingIndicator.isVisible().catch(() => false);
+      
+      throw new Error(
+        `Refresh models failed: ${error.message}. ` +
+        `Original time: "${originalTime}", Current time: "${currentTime}", ` +
+        `Loading indicator visible: ${loadingVisible}`
+      );
+    }
   }
 
   /**

@@ -20,7 +20,7 @@ Tests will automatically skip if required images are missing, printing guidance 
 
 ```bash
 # Example test output when images are missing:
-⚠️  Test data missing: tests/fixtures/images/apple.jpg
+⚠️  Test data missing: data/samples/images/apple_01.jpg
    Please add sample food images to continue with upload tests.
    Images should be < 1MB, JPEG/PNG format, food-related content.
 ```
@@ -34,7 +34,7 @@ For local testing, ensure test images are present:
 
 ```bash
 # Check for required test images
-ls -la tests/fixtures/images/
+ls -la data/samples/images/
 ls -la data/samples/
 
 # Images can be any food photos meeting size/format requirements

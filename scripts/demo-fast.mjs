@@ -7,13 +7,37 @@ async function runFastTomraDemo() {
   console.log('📡 Starting mock server...');
   const { spawn } = await import('child_process');
   const serverProcess = spawn('node', ['scripts/serve-mock.mjs'], { 
-    stdio: 'pipe',
+    stdio: 'inherit', // Show server output for better debugging
     cwd: process.cwd()
   });
   
-  // Wait for server to start
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  console.log('✅ Mock server should be running on http://127.0.0.1:5173');
+  // Active readiness check with health endpoint polling
+  const serverUrl = 'http://127.0.0.1:5173';
+  const healthUrl = `${serverUrl}/upload.html`; // Use existing endpoint for health check
+  const maxRetries = 30; // 15 seconds total (30 * 500ms)
+  let retries = 0;
+  
+  console.log('⏳ Waiting for server to be ready...');
+  while (retries < maxRetries) {
+    try {
+      const response = await fetch(healthUrl);
+      if (response.ok) {
+        console.log(`✅ Mock server ready at ${serverUrl}`);
+        break;
+      }
+    } catch (error) {
+      // Server not ready yet, continue polling
+    }
+    
+    retries++;
+    if (retries >= maxRetries) {
+      console.error('❌ Server failed to start within timeout');
+      serverProcess.kill();
+      throw new Error(`Mock server did not become ready within ${maxRetries * 500}ms`);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
   
   // Launch browser with faster settings
   const browser = await chromium.launch({

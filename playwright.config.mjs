@@ -3,6 +3,11 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
+ * 
+ * Environment Variables:
+ * - HEADLESS: Set to 'true' or '1' to run in headless mode (default: false)
+ * - PLAYWRIGHT_DEBUG: Set to 'true' to enable debug mode with slowMo and maximized window (default: false)
+ * - MOCK_APP: Set to 'true' to use mock application instead of real services (default: false)
  */
 // import dotenv from 'dotenv';
 // dotenv.config();
@@ -10,9 +15,9 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Environment variable configuration
  */
-const HEADLESS = false; // Force visible browser for demo
+const HEADLESS = process.env.HEADLESS === 'true' || process.env.HEADLESS === '1'; // Default to false, true if explicitly 'true' or '1'
+const PLAYWRIGHT_DEBUG = process.env.PLAYWRIGHT_DEBUG === 'true'; // Debug/demo mode
 const MOCK_APP = process.env.MOCK_APP === 'true'; // Default to false, unless explicitly true
-const TEST_ENV = process.env.TEST_ENV || 't1';
 
 /**
  * Determine baseURL based on MOCK_APP setting
@@ -54,9 +59,6 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: getBaseURL(),
 
-    /* Force visible browser */
-    headless: false,
-
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'retain-on-failure',
     
@@ -77,17 +79,16 @@ export default defineConfig({
       name: 'chromium',
       use: { 
         ...devices['Desktop Chrome'],
-        // Force visible browser with explicit settings
-        headless: false,
+        headless: HEADLESS,
         launchOptions: {
-          headless: false,
-          slowMo: 1000,
-          devtools: false,
+          slowMo: PLAYWRIGHT_DEBUG ? 500 : 0, // Reduced slowMo for debug, 0 for CI
+          devtools: PLAYWRIGHT_DEBUG,
           args: [
             '--no-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-web-security',
-            '--start-maximized'
+            // Security note: --disable-web-security removed for security.
+            // If specific tests require it, add conditionally with documentation.
+            ...(PLAYWRIGHT_DEBUG ? ['--start-maximized'] : [])
           ]
         }
       },

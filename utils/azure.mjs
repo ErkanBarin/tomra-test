@@ -230,9 +230,30 @@ export class AzureMLUtils {
 
         const status = await this.getJobStatus(jobId);
         
-        if (status.body.properties.status === 'Completed') {
+        // Check for error responses (404, etc.) or missing properties
+        if (!status || !status.body) {
+          reject(new Error(`Invalid job status response: ${JSON.stringify(status)}`));
+          return;
+        }
+        
+        if (status.status === 404 || status.body.error) {
+          const errorMsg = status.body.error 
+            ? `${status.body.error.code}: ${status.body.error.message}`
+            : `Job status error (HTTP ${status.status})`;
+          reject(new Error(errorMsg));
+          return;
+        }
+        
+        if (!status.body.properties || !status.body.properties.status) {
+          reject(new Error(`Missing job status properties in response: ${JSON.stringify(status.body)}`));
+          return;
+        }
+        
+        // Safe to access properties after validation
+        const jobStatus = status.body.properties.status;
+        if (jobStatus === 'Completed') {
           resolve(status);
-        } else if (status.body.properties.status === 'Failed') {
+        } else if (jobStatus === 'Failed') {
           reject(new Error('Job failed'));
         } else {
           setTimeout(pollJob, interval);
@@ -336,13 +357,30 @@ export class ModelRegistryUtils {
   }
 
   /**
-   * Validate model performance against thresholds
+   * Validate model performance metrics
    * @param {string} modelName - Name of the model
    * @param {string} modelVersion - Version of the model
    * @returns {Object} Validation result
    */
   async validateModelPerformance(modelName, modelVersion) {
     const model = await this.getModel(modelName, modelVersion);
+    
+    // Check for null/undefined model before accessing properties
+    if (!model) {
+      return {
+        isValid: false,
+        metrics: {
+          f1_score: null,
+          accuracy: null
+        },
+        thresholds: {
+          f1_score: 0.92
+        },
+        error: `Model not found: ${modelName} version ${modelVersion}`
+      };
+    }
+    
+    // Safe to access properties after null check
     const f1Score = parseFloat(model.properties.f1_score);
     
     return {

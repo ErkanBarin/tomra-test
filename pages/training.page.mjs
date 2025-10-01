@@ -78,6 +78,7 @@ export class TrainingPage {
       <head><title>Mock Training Page</title></head>
       <body>
         <input data-testid="dataset-path-input" placeholder="Dataset path" />
+        <input data-testid="model-name-input" type="text" placeholder="Model name" />
         <input data-testid="epochs-input" type="number" value="10" />
         <input data-testid="batch-size-input" type="number" value="32" />
         <input data-testid="learning-rate-input" type="number" value="0.001" />
@@ -143,8 +144,32 @@ export class TrainingPage {
   async startTraining() {
     await this.startTrainingButton.click();
     
-    // Wait for training to start
-    await this.page.waitForTimeout(1000);
+    // Wait for training to start - check for UI changes that indicate training has begun
+    try {
+      await Promise.race([
+        // Wait for training started message to appear
+        this.page.waitForSelector('[data-testid="training-started-message"]', { 
+          state: 'visible', 
+          timeout: 10000 
+        }),
+        // Or wait for status indicator to show training is in progress
+        this.page.waitForFunction(
+          () => {
+            const statusElement = document.querySelector('[data-testid="training-status-indicator"]');
+            return statusElement && (
+              statusElement.textContent.includes('running') ||
+              statusElement.textContent.includes('started') ||
+              statusElement.textContent.includes('in-progress') ||
+              statusElement.textContent.includes('training')
+            );
+          },
+          {},
+          { timeout: 10000 }
+        )
+      ]);
+    } catch (error) {
+      throw new Error(`Training failed to start within 10 seconds. UI did not reflect training state change. Original error: ${error.message}`);
+    }
   }
 
   /**
@@ -252,8 +277,12 @@ export class TrainingPage {
    * @returns {Object} Model registration info
    */
   async getRegisteredModelInfo() {
+    if (!this.page) {
+      throw new Error('TrainingPage: page instance is not available. Ensure the page is properly initialized.');
+    }
+    
     try {
-      const modelInfoElement = page.getByTestId('registered-model-info');
+      const modelInfoElement = this.page.getByTestId('registered-model-info');
       const modelInfoText = await modelInfoElement.textContent();
       return JSON.parse(modelInfoText);
     } catch {

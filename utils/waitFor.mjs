@@ -24,7 +24,22 @@ export async function waitFor(fn, predicate, timeoutMs = 60000, intervalMs = 100
       }
       
       try {
-        const value = await fn();
+        // Create timeout wrapper for fn() execution
+        const remainingTime = timeoutMs - elapsed;
+        const fnPromise = fn();
+        const timeoutPromise = new Promise((_, timeoutReject) => 
+          setTimeout(() => timeoutReject(new Error(`Function execution timeout after ${remainingTime}ms`)), remainingTime)
+        );
+        
+        // Race fn() against remaining timeout
+        const value = await Promise.race([fnPromise, timeoutPromise]);
+        
+        // Check timeout again after fn() completes
+        const finalElapsed = Date.now() - startTime;
+        if (finalElapsed > timeoutMs) {
+          reject(new Error(`waitFor timeout after ${timeoutMs}ms (exceeded during function execution)`));
+          return;
+        }
         
         if (predicate(value)) {
           resolve(value);
@@ -32,6 +47,13 @@ export async function waitFor(fn, predicate, timeoutMs = 60000, intervalMs = 100
           setTimeout(poll, intervalMs);
         }
       } catch (error) {
+        // Check if we've exceeded timeout before continuing
+        const finalElapsed = Date.now() - startTime;
+        if (finalElapsed > timeoutMs) {
+          reject(new Error(`waitFor timeout after ${timeoutMs}ms`));
+          return;
+        }
+        
         // Continue polling on errors unless timeout reached
         setTimeout(poll, intervalMs);
       }
@@ -73,13 +95,13 @@ export async function waitForText(page, selector, text, timeout = 30000) {
 }
 
 /**
- * Wait for network request to complete
+ * Wait for network response to complete
  * @param {Object} page - Playwright page object
  * @param {string|RegExp} urlPattern - URL pattern to match
  * @param {number} timeout - Timeout in milliseconds
  * @returns {Promise} Resolves with response
  */
-export async function waitForRequest(page, urlPattern, timeout = 30000) {
+export async function waitForResponse(page, urlPattern, timeout = 30000) {
   return page.waitForResponse(
     response => {
       const url = response.url();

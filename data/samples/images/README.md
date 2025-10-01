@@ -30,7 +30,7 @@ cp your-photo.png data/samples/images/
 cp ~/Pictures/sample.jpg data/samples/images/
 
 # Run headed tests to see your image being uploaded
-pnpm run test:headed
+npm run test:headed
 ```
 
 The tests will automatically detect any images in this folder and use them during upload testing.

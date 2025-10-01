@@ -169,7 +169,34 @@
         const finalMetricsDisplay = document.querySelector('[data-testid="final-metrics-display"]');
         const registerButton = document.querySelector('[data-testid="register-model-button"]');
         
+        // Training state management
+        let isTraining = false;
+        let trainingInterval = null;
+        let trainingTimeout = null;
+        
+        function resetTrainingState() {
+            isTraining = false;
+            startButton.disabled = false;
+            if (trainingInterval) {
+                clearInterval(trainingInterval);
+                trainingInterval = null;
+            }
+            if (trainingTimeout) {
+                clearTimeout(trainingTimeout);
+                trainingTimeout = null;
+            }
+        }
+        
         startButton.addEventListener('click', function() {
+            // Guard against re-entry
+            if (isTraining) {
+                return;
+            }
+            
+            // Set training state and disable button
+            isTraining = true;
+            startButton.disabled = true;
+            
             // Show initial status
             trainingStartedMessage.classList.remove('hidden');
             jobIdDisplay.classList.remove('hidden');
@@ -177,7 +204,7 @@
             progressBar.classList.remove('hidden');
             
             // Simulate training progression
-            setTimeout(() => {
+            trainingTimeout = setTimeout(() => {
                 // Change to running
                 statusIndicator.className = 'status-indicator status-running';
                 statusText.textContent = 'Running';
@@ -186,12 +213,13 @@
                 
                 // Simulate progress
                 let progress = 0;
-                const interval = setInterval(() => {
+                trainingInterval = setInterval(() => {
                     progress += 5;
                     progressFill.style.width = progress + '%';
                     
                     if (progress >= 100) {
-                        clearInterval(interval);
+                        clearInterval(trainingInterval);
+                        trainingInterval = null;
                         
                         // Change to succeeded
                         statusIndicator.className = 'status-indicator status-succeeded';
@@ -199,6 +227,9 @@
                         completeMessage.classList.remove('hidden');
                         finalMetricsDisplay.classList.remove('hidden');
                         registerButton.classList.remove('hidden');
+                        
+                        // Reset state when training completes
+                        resetTrainingState();
                     }
                 }, 200);
             }, 1000);

@@ -31,6 +31,12 @@ export class UploadPage {
       await this.page.goto('/upload');
       await this.page.waitForLoadState('networkidle');
     } catch (error) {
+      // Log the original navigation error for debugging
+      console.error(
+        `Upload page navigation failed, falling back to mock file. Error: ${error.message}`,
+        error.stack
+      );
+      
       // If no server is available, use local mock HTML file
       const mockFilePath = `file://${process.cwd()}/tests/fixtures/mock-app/upload.html`;
       await this.page.goto(mockFilePath);

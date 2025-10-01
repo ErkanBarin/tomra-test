@@ -29,9 +29,9 @@ test.describe('Image Upload Integration', () => {
       
       // Verify image metadata is captured
       const metadata = await uploadPage.getImageMetadata();
-      expect(metadata).toHaveProperty('filename', 'apple.jpg');
+      expect(metadata).toHaveProperty('filename', 'apple.png');
       expect(metadata).toHaveProperty('size');
-      expect(metadata).toHaveProperty('type', 'image/jpeg');
+      expect(metadata).toHaveProperty('type', 'image/png');
       expect(metadata.size).toBeGreaterThan(0);
       
     } catch (error) {
@@ -52,7 +52,8 @@ test.describe('Image Upload Integration', () => {
       const imagePaths = [
         'data/samples/images/apple.png',
         'data/samples/images/orange.png'
-      ];      await uploadPage.uploadMultipleImages(testImages);
+      ];
+      await uploadPage.uploadMultipleImages(imagePaths);
       
       // Verify all uploads succeeded
       await expect(uploadPage.batchSuccessMessage).toBeVisible();

@@ -7,13 +7,47 @@ async function runTomraDemo() {
   console.log('📡 Starting mock server...');
   const { spawn } = await import('child_process');
   const serverProcess = spawn('node', ['scripts/serve-mock.mjs'], { 
-    stdio: 'pipe',
+    stdio: ['ignore', 'pipe', 'pipe'], // Pipe stdout/stderr for forwarding
     cwd: process.cwd()
   });
   
-  // Wait for server to start
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  console.log('✅ Mock server should be running on http://127.0.0.1:5173');
+  // Forward server output to parent process for visibility
+  serverProcess.stdout.on('data', (data) => {
+    process.stdout.write(`[SERVER] ${data}`);
+  });
+  serverProcess.stderr.on('data', (data) => {
+    process.stderr.write(`[SERVER ERROR] ${data}`);
+  });
+  
+  // Deterministic readiness check with health endpoint polling
+  const serverUrl = 'http://127.0.0.1:5173';
+  const healthUrl = `${serverUrl}/upload.html`; // Use existing endpoint for health check
+  const maxRetries = 50; // 10 seconds total (50 * 200ms)
+  const retryInterval = 200; // 200ms intervals as requested
+  let retries = 0;
+  
+  console.log('⏳ Polling server readiness...');
+  while (retries < maxRetries) {
+    try {
+      const response = await fetch(healthUrl);
+      if (response.status >= 200 && response.status < 300) {
+        console.log(`✅ Mock server ready at ${serverUrl}`);
+        break;
+      }
+    } catch (error) {
+      // Connection error, server not ready yet
+    }
+    
+    retries++;
+    if (retries >= maxRetries) {
+      console.error(`❌ Server failed to respond within ${maxRetries * retryInterval}ms`);
+      console.error('🔍 Killing server process and exiting...');
+      serverProcess.kill();
+      process.exit(1); // Exit with non-zero code for deterministic failure
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, retryInterval));
+  }
   
   // Launch browser with explicit visible settings
   const browser = await chromium.launch({

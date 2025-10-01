@@ -45,7 +45,7 @@
         
         <div data-testid="loading-indicator" class="loading" style="display: none;">Loading models...</div>
         
-        <div data-testid="model-count" class="model-count">3 model(s) found</div>
+        <div data-testid="model-count" class="model-count">4 model(s) found</div>
         
     <table class="models-table" data-testid="models-table">
       <thead>
@@ -67,7 +67,7 @@
           <td data-testid="model-f1-score">0.95</td>
           <td>
             <button class="btn-promote" data-testid="promote-button" data-model="food-classification" data-version="1">
-              Promote to <span class="stage-badge staging" data-testid="stage-badge">Staging</span>
+              Promote to <span class="stage-badge stage-staging" data-testid="stage-badge">Staging</span>
             </button>
           </td>
         </tr>
@@ -79,7 +79,7 @@
           <td data-testid="model-f1-score">0.93</td>
           <td>
             <button class="btn-promote" data-testid="promote-button" data-model="food-classification-v1" data-version="2">
-              Promote to <span class="stage-badge staging" data-testid="stage-badge">Staging</span>
+              Promote to <span class="stage-badge stage-staging" data-testid="stage-badge">Staging</span>
             </button>
           </td>
         </tr>
@@ -91,7 +91,7 @@
           <td data-testid="model-f1-score">0.96</td>
           <td>
             <button class="btn-promote" data-testid="promote-button" data-model="apple-classifier" data-version="3">
-              Promote to <span class="stage-badge staging" data-testid="stage-badge">Staging</span>
+              Promote to <span class="stage-badge stage-staging" data-testid="stage-badge">Staging</span>
             </button>
           </td>
         </tr>
@@ -103,7 +103,7 @@
           <td data-testid="model-f1-score">0.92</td>
           <td>
             <button class="btn-promote" data-testid="promote-button" data-model="waste-classifier" data-version="4">
-              Promote to <span class="stage-badge production" data-testid="stage-badge">Production</span>
+              Promote to <span class="stage-badge stage-production" data-testid="stage-badge">Production</span>
             </button>
           </td>
         </tr>
@@ -160,6 +160,7 @@
           element: row
         }));
         filteredModels = [...allModels];
+        renderModels(); // Update the count on initial load
       }
 
       function searchModels() {
@@ -182,6 +183,10 @@
       function renderModels() {
         const tbody = document.getElementById('models-tbody');
         const emptyState = document.getElementById('empty-state');
+        const modelCountElement = document.querySelector('[data-testid="model-count"]');
+        
+        // Update model count
+        modelCountElement.textContent = `${filteredModels.length} model(s) found`;
         
         // Hide all rows first
         allModels.forEach(model => {
@@ -256,13 +261,13 @@
         document.querySelector('[data-testid="last-refresh-time"]').textContent = `Last refreshed: ${timeStr}`;
       }
 
-      function promoteModel(modelName, version) {
+      function promoteModel(event, modelName, version) {
         const button = event.target.closest('button');
         const stageBadge = button.querySelector('.stage-badge');
         
-        if (stageBadge.classList.contains('staging')) {
-          stageBadge.classList.remove('staging');
-          stageBadge.classList.add('production');
+        if (stageBadge.classList.contains('stage-staging')) {
+          stageBadge.classList.remove('stage-staging');
+          stageBadge.classList.add('stage-production');
           stageBadge.textContent = 'Production';
           button.innerHTML = button.innerHTML.replace('Promote to', 'Deployed to');
         }
@@ -275,7 +280,7 @@
         if (e.target.classList.contains('btn-promote')) {
           const modelName = e.target.dataset.model;
           const version = e.target.dataset.version;
-          promoteModel(modelName, version);
+          promoteModel(e, modelName, version);
         }
       });
     </script>

@@ -17,7 +17,7 @@ tests/fixtures/
 ## Mock Application
 - **Purpose**: Provides a test web application that simulates the TOMRA Food MLOPS Platform
 - **Usage**: Used by smoke tests and demo scripts to verify UI automation
-- **Served by**: `scripts/serve-mock.mjs` on port 3000
+- **Served by**: `scripts/serve-mock.mjs` on port 5173
 - **Features**: Simple HTML pages with proper test IDs and basic styling
 
 ## Test Data Files
